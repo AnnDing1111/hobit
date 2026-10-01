@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="{{ lang }}">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ t.title }}</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f4f4f4; padding: 20px; margin: 0; }
+        .container { max-width: 900px; margin: 0 auto; background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        h1 { margin-top: 0; color: #333; }
+
+        /* Tabs */
+        .tabs { display: flex; border-bottom: 2px solid #ddd; margin-bottom: 20px; }
+        .tab { padding: 10px 20px; cursor: pointer; font-weight: bold; color: #666; border-bottom: 3px solid transparent; }
+        .tab:hover { color: #000; }
+        .tab.active { color: #007bff; border-bottom-color: #007bff; }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* Form Elements */
+        .form-group { margin-bottom: 15px; }
+        label { display: block; font-weight: bold; margin-bottom: 5px; color: #555; }
+
+        /* File Input Styling */
+        .file-input-wrapper {
+            border: 2px dashed #ccc;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            background: #fafafa;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+        }
+        .file-input-wrapper:hover { background: #f0f0f0; border-color: #999; }
+        .file-input-wrapper.dragover { background: #e8f0fe; border-color: #007bff; }
+
+        .file-name { margin-top: 8px; font-weight: bold; color: #28a745; font-size: 0.95em; min-height: 20px; }
+        .placeholder-text { color: #888; pointer-events: none; }
+
+        /* Parameters Grid */
+        .params-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; background: #f9f9f9; padding: 15px; border-radius: 4px; border: 1px solid #eee; }
+        input[type="number"], input[type="text"] { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+
+        /* Buttons */
+        button.run-btn { width: 100%; padding: 15px; background: #007bff; color: #fff; border: none; font-size: 16px; font-weight: bold; border-radius: 4px; cursor: pointer; transition: background 0.3s; margin-top: 20px; }
+        button.run-btn:hover { background: #0056b3; }
+        button.run-btn:disabled { background: #ccc; cursor: not-allowed; }
+
+        /* Status & Help */
+        #status-box { margin-top: 20px; padding: 15px; border-radius: 4px; display: none; text-align: center; font-weight: bold; }
+        .status-running { background: #e2e6ea; color: #004085; }
+        .status-complete { background: #d4edda; color: #155724; }
+        .status-error { background: #f8d7da; color: #721c24; }
+
+        .file-list { margin-top: 15px; text-align: left; }
+        .file-item { display: block; padding: 10px; background: #fff; border: 1px solid #ddd; margin-bottom: 5px; text-decoration: none; color: #333; border-radius: 4px; }
+        .file-item:hover { background: #f1f1f1; border-color: #bbb; }
+
+        /* Full README Help Styling */
+        .help-section { line-height: 1.6; color: #333; max-height: 600px; overflow-y: auto; padding-right: 15px; border: 1px solid #eee; padding: 20px; border-radius: 4px; }
+        .help-section h2 { border-bottom: 2px solid #eee; padding-bottom: 10px; margin-top: 0; }
+        .help-section h3 { color: #007bff; margin-top: 25px; margin-bottom: 10px; font-size: 1.2em; border-left: 4px solid #007bff; padding-left: 10px; background: #f9f9f9; padding-top:5px; padding-bottom:5px;}
+        .help-section ul { padding-left: 20px; margin-top: 5px;}
+        .help-section li { margin-bottom: 8px; font-size: 14px; }
+        .help-code { background: #f4f4f4; padding: 2px 6px; border-radius: 3px; font-family: Consolas, monospace; color: #c7254e; font-size: 0.9em; }
+
+        .help-table { width: 100%; border-collapse: collapse; margin-top: 10px; margin-bottom: 20px; font-size: 14px; }
+        .help-table th, .help-table td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        .help-table th { background-color: #f1f1f1; font-weight: bold; color: #333; }
+        .help-table tr:nth-child(even) { background-color: #fafafa; }
+
+        /* Scrollbar Styling */
+        .help-section::-webkit-scrollbar { width: 8px; }
+        .help-section::-webkit-scrollbar-track { background: #f1f1f1; }
+        .help-section::-webkit-scrollbar-thumb { background: #ccc; border-radius: 4px; }
+        .help-section::-webkit-scrollbar-thumb:hover { background: #aaa; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h1>{{ t.title }}</h1>
+        <button onclick="toggleLang()" style="padding: 5px 10px; cursor: pointer; border: 1px solid #ccc; background: #fff; border-radius: 4px;">En / CN</button>
+    </div>
+
+    <div class="tabs">
+        <div class="tab active" onclick="switchTab('genome')">{{ t.tab_genome }}</div>
+        <div class="tab" onclick="switchTab('protein')">{{ t.tab_protein }}</div>
+        <div class="tab" onclick="switchTab('help')">{{ t.tab_help }}</div>
+    </div>
+
+    <div id="tab-genome" class="tab-content active">
+        <form id="form-genome">
+            <input type="hidden" name="mode" value="genome">
+
+            <div class="form-group">
+                <label>{{ t.lbl_genome }} <span style="color:red">*</span></label>
+                <div class="file-input-wrapper" id="drop-genome">
+                    <div class="placeholder-text">Drag & Drop Genome FASTA</div>
+                    <div id="name-genome" class="file-name"></div>
+                    <input type="file" id="g-genome" name="genome_file" style="display:none">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>{{ t.lbl_query }}</label>
+                <div class="file-input-wrapper" id="drop-query">
+                    <div class="placeholder-text">(Optional) Drag Custom Reference / HD.fasta</div>
+                    <div id="name-query" class="file-name"></div>
+                    <input type="file" id="g-query" name="query_file" style="display:none">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>{{ t.lbl_gff }}</label>
+                <div class="file-input-wrapper" id="drop-gff">
+                    <div class="placeholder-text">(Optional) Drag GFF for Comparison</div>
+                    <div id="name-gff" class="file-name"></div>
+                    <input type="file" id="g-gff" name="ref_gff_file" style="display:none">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>{{ t.lbl_params }}</label>
+                <div class="params-grid">
+                    <div><label>Search Window (bp)</label><input type="number" name="window" value="5000"></div>
+                    <div><label>Cluster Distance (bp)</label><input type="number" name="cluster" value="200"></div>
+                    <div><label>Max E-Value</label><input type="text" name="max_evalue" value="0.1"></div>
+                    <div><label>CPU Threads</label><input type="number" name="threads" value="4"></div>
+
+                    <div style="grid-column: span 2;">
+                        <input type="checkbox" id="g-exo" name="exonerate" value="true" checked>
+                        <label for="g-exo" style="display:inline">Run Exonerate (Gene Structure Prediction)</label>
+                    </div>
+
+                    <div style="grid-column: span 2;">
+                        <input type="checkbox" id="g-rep" name="filter_repeats" value="true">
+                        <label for="g-rep" style="display:inline">Filter Repeats (Requires GFF)</label>
+                    </div>
+
+                    <div style="grid-column: span 2; padding-top: 10px; border-top: 1px dashed #ccc;">
+                        <input type="checkbox" id="g-esm" name="use_esm" value="true">
+                        <label for="g-esm" style="display:inline; color: #d63384; font-weight: bold;">
+                            Run ESM2 AI Scoring (Deep Learning Validation - Requires internet on 1st run)
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <button type="button" class="run-btn" onclick="submitTask('form-genome')">{{ t.btn_run }}</button>
+        </form>
+    </div>
+
+    <div id="tab-protein" class="tab-content">
+        <form id="form-protein">
+            <input type="hidden" name="mode" value="protein">
+
+            <div class="form-group">
+                <label>{{ t.lbl_protein }} <span style="color:red">*</span></label>
+                <div class="file-input-wrapper" id="drop-prot">
+                    <div class="placeholder-text">Drag & Drop Protein FASTA</div>
+                    <div id="name-prot" class="file-name"></div>
+                    <input type="file" id="p-prot" name="protein_file" style="display:none">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>{{ t.lbl_hmm }}</label>
+                <div class="file-input-wrapper" id="drop-hmm">
+                    <div class="placeholder-text">(Optional) Drag Custom HMM File</div>
+                    <div id="name-hmm" class="file-name"></div>
+                    <input type="file" id="p-hmm" name="hmm_file" style="display:none">
+                </div>
+            </div>
+
+            <div class="params-grid">
+                 <div><label>Max E-Value</label><input type="text" name="max_evalue" value="0.001"></div>
+            </div>
+
+            <button type="button" class="run-btn" onclick="submitTask('form-protein')">{{ t.btn_run }}</button>
+        </form>
+    </div>
+
+    <div id="tab-help" class="tab-content help-section">
+        {% if lang == 'zh' %}
+        <h2>帮助与使用说明</h2>
+        <p>HobIT 是一个综合性的生物信息学工具包，用于<strong>同源异型盒 (Homeodomain)</strong> 基因的鉴定、注释和结构预测。</p>
+
+        <h3>主要功能</h3>
+        <ul>
+            <li><strong>基于 BLAST 的同源搜索</strong>：使用 tblastn 在基因组中搜索同源异型基因。</li>
+            <li><strong>HMMER 结构域精修</strong>：使用 Pfam 模型 (PF00046) 精确界定结构域边界。</li>
+            <li><strong>基因结构预测</strong>：可选使用 Exonerate 预测完整的基因模型（内含子/外显子）。</li>
+            <li><strong>注释比对</strong>：可与参考 GFF 文件比对，区分“已知”与“新颖”基因。</li>
+            <li><strong>ESM2 AI 语义打分 (新功能)</strong>：调用 Meta 的蛋白质语言模型，对预测出的基因进行相似度评分，辅助过滤假阳性。</li>
+            <li><strong>蛋白质模式</strong>：使用 HMM 模型直接扫描蛋白质序列。</li>
+        </ul>
+
+        <h3>用户指南</h3>
+
+        <h4>模式 1：基因组模式 (DNA)</h4>
+        <p>当你拥有基因组组装文件 (.fasta) 并想从中寻找基因时使用。</p>
+        <ul>
+            <li><strong>基因组序列</strong>：拖拽上传你的基因组 FASTA 文件。</li>
+            <li><strong>参考序列</strong> (可选)：拖拽包含已知 Homeodomain 的蛋白文件。如果不传，程序将使用内置数据库。</li>
+            <li><strong>参考注释 GFF</strong> (可选)：拖拽 .gff3 文件。程序会将预测结果与已知基因进行位置比对。</li>
+            <li><strong>Exonerate</strong>：勾选此项以预测完整基因结构（由于计算复杂，速度会变慢）。</li>
+            <li><strong>ESM2 AI Scoring</strong>：勾选此项将在主程序运行完毕后，利用 AI 对候选序列进行评分。首次运行该功能需联网下载约 30MB 的模型。</li>
+        </ul>
+
+        <h4>模式 2：蛋白质模式 (AA)</h4>
+        <p>当你拥有一组蛋白质序列 (.fasta) 并想筛选其中的 Homeodomain 时使用。</p>
+        <ul>
+            <li><strong>蛋白质序列</strong>：拖拽上传你的蛋白质 FASTA 文件。</li>
+            <li><strong>HMM 模型</strong> (可选)：拖拽自定义的 .hmm 文件。如果不传，默认使用 Pfam PF00046。</li>
+        </ul>
+
+        <h3>输出文件说明</h3>
+        <p>对于名为 "genome.fasta" 的任务，结果将保存在 <span class="help-code">results/任务ID/</span> 文件夹中：</p>
+
+        <table class="help-table">
+            <tr><th>文件名</th><th>描述</th></tr>
+            <tr>
+                <td><span class="help-code">isengard_output.xlsx</span></td>
+                <td><strong>主结果表格</strong>。包含评分、位置、预测的家族/类别 (Family/Class) 和序列。</td>
+            </tr>
+            <tr>
+                <td><span class="help-code">AI_Scoring_Report.xlsx</span></td>
+                <td><strong>(仅在勾选 ESM2 时生成)</strong> AI 基于语义相似度对候选序列的打分排名。</td>
+            </tr>
+            <tr>
+                <td><span class="help-code">hobit_protein.fasta</span></td>
+                <td>提取出的同源异型结构域氨基酸序列。</td>
+            </tr>
+            <tr>
+                <td><span class="help-code">hobit_genes.gff3</span></td>
+                <td>基因结构注释文件（仅限基因组模式）。可导入 IGV 或 JBrowse 查看。</td>
+            </tr>
+            <tr>
+                <td><span class="help-code">hobit_cds.fasta</span></td>
+                <td>预测基因的编码序列 (CDS)。</td>
+            </tr>
+        </table>
+
+        <h3>Excel 列名解释</h3>
+        <ul>
+            <li><strong>Scaffold/Location</strong>: 基因在基因组上的位置。</li>
+            <li><strong>Family/Class</strong>: 预测的基因分类（例如 <em>Hox1</em>, <em>ANTP</em>）。</li>
+            <li><strong>E-value</strong>: 统计显著性（数值越小越好，例如 1e-50）。</li>
+            <li><strong>Notes</strong>: 重要标记（如 <span class="help-code">CHIMERIC_HIT</span> 嵌合体警告, <span class="help-code">REF_MATCH</span> 已知基因匹配, <span class="help-code">NOVEL_PREDICTION</span> 新发现基因）。</li>
+        </ul>
+
+        <h3>常见问题 (Troubleshooting)</h3>
+        <p><strong>报错 "Command not found"?</strong><br>
+        请确保你安装了必要的生物信息学工具 (BLAST+, HMMER, Exonerate)。</p>
+        <ul>
+            <li>Mac: 终端运行 <span class="help-code">brew install ncbi-blast hmmer exonerate</span></li>
+            <li>Ubuntu: 终端运行 <span class="help-code">sudo apt-get install ncbi-blast+ hmmer exonerate</span></li>
+        </ul>
+
+        <p><strong>浏览器没有自动打开？</strong><br>
+        请在浏览器地址栏手动输入 <span class="help-code">http://127.0.0.1:5000</span> (或终端提示的端口号)</p>
+
+        <h3>引用与作者</h3>
+        <ul>
+            <li><strong>基于原作</strong>: Thomas Barton-Owen</li>
+            <li><strong>当前版本</strong>: 1.0.0 (Desktop GUI)</li>
+        </ul>
+
+        {% else %}
+        <h2>Help & Manual</h2>
+        <p>A comprehensive bioinformatics toolkit for Homeobox (Homeodomain) identification, annotation, and gene structure prediction.</p>
+
+        <h3>Features</h3>
+        <ul>
+            <li><strong>BLAST-based Homology Search</strong>: Uses tblastn to find homeobox genes in genomic sequences.</li>
+            <li><strong>HMMER Domain Refinement</strong>: Uses Pfam profiles (PF00046) to precisely define domain boundaries.</li>
+            <li><strong>Gene Structure Prediction</strong>: Optionally uses Exonerate to predict Introns/Exons.</li>
+            <li><strong>Annotation Comparison</strong>: Compare predictions against a reference GFF to identify "Novel" vs "Known" genes.</li>
+            <li><strong>ESM2 AI Semantic Scoring (New)</strong>: Uses Meta's protein language model to score predictions based on semantic similarity, helping filter false positives.</li>
+            <li><strong>Protein Mode</strong>: Directly scans protein sequences using HMM models.</li>
+        </ul>
+
+        <h3>User Guide</h3>
+
+        <h4>Mode 1: Genome Mode (DNA)</h4>
+        <p>Use this when you have a genome assembly (.fasta) and want to find homeobox genes.</p>
+        <ul>
+            <li><strong>Genome Sequence</strong>: Drag & drop your genome FASTA.</li>
+            <li><strong>Reference Query</strong>: (Optional) A protein FASTA containing known Homeodomains.</li>
+            <li><strong>Reference Annotation</strong>: (Optional) A .gff3 file. HobIT will check if its predictions overlap with known genes.</li>
+            <li><strong>Exonerate</strong>: Check this to predict full gene models (Exons/Introns).</li>
+            <li><strong>ESM2 AI Scoring</strong>: Check this to run an AI-based validation after the main analysis. Requires internet connection on the first run to download a small 30MB model.</li>
+        </ul>
+
+        <h4>Mode 2: Protein Mode (AA)</h4>
+        <p>Use this when you have a proteome (.fasta) and want to screen for Homeodomain motifs.</p>
+        <ul>
+            <li><strong>Protein Sequence</strong>: Drag & drop your protein FASTA.</li>
+            <li><strong>HMM Model</strong>: (Optional) Custom .hmm file. Defaults to Pfam PF00046.</li>
+        </ul>
+
+        <h3>Output Files</h3>
+        <p>Results are saved in the <span class="help-code">results/</span> folder:</p>
+
+        <table class="help-table">
+            <tr><th>File Name</th><th>Description</th></tr>
+            <tr>
+                <td><span class="help-code">isengard_output.xlsx</span></td>
+                <td><strong>Main Result Table</strong>. Contains scores, locations, predicted Family/Class, and sequences.</td>
+            </tr>
+            <tr>
+                <td><span class="help-code">AI_Scoring_Report.xlsx</span></td>
+                <td><strong>(If ESM2 enabled)</strong> Independent ranking of candidate sequences scored by the AI model.</td>
+            </tr>
+            <tr>
+                <td><span class="help-code">hobit_protein.fasta</span></td>
+                <td>Extracted amino acid sequences of the identified Homeodomains.</td>
+            </tr>
+            <tr>
+                <td><span class="help-code">hobit_genes.gff3</span></td>
+                <td>Gene structure annotations (Genome Mode only). Compatible with IGV/JBrowse.</td>
+            </tr>
+            <tr>
+                <td><span class="help-code">hobit_cds.fasta</span></td>
+                <td>Coding sequences (CDS) of predicted genes.</td>
+            </tr>
+        </table>
+
+        <h3>Excel Column Key</h3>
+        <ul>
+            <li><strong>Scaffold/Location</strong>: Genomic position.</li>
+            <li><strong>Family/Class</strong>: Predicted classification (e.g., Hox1, ANTP).</li>
+            <li><strong>E-value</strong>: Statistical significance (lower is better).</li>
+            <li><strong>Notes</strong>: Important flags (e.g., <span class="help-code">CHIMERIC_HIT</span>, <span class="help-code">REF_MATCH</span>, <span class="help-code">NOVEL_PREDICTION</span>).</li>
+        </ul>
+
+        <h3>Troubleshooting</h3>
+        <p><strong>"Command not found" error?</strong><br>
+        Ensure you have installed the required tools (BLAST+, HMMER, Exonerate).</p>
+        <ul>
+            <li>Mac: <span class="help-code">brew install ncbi-blast hmmer exonerate</span></li>
+            <li>Ubuntu: <span class="help-code">sudo apt-get install ncbi-blast+ hmmer exonerate</span></li>
+        </ul>
+
+        <p><strong>Browser doesn't open?</strong><br>
+        Manually enter <span class="help-code">http://127.0.0.1:5000</span> (or the port shown in terminal) in your browser address bar.</p>
+
+        <h3>Citation & Authors</h3>
+        <ul>
+            <li><strong>Based on original work by</strong>: Thomas Barton-Owen</li>
+            <li><strong>Current Version</strong>: 1.0.0 (Desktop GUI)</li>
+        </ul>
+
+        <h3>License</h3>
+        <p>No license provided.</p>
+        {% endif %}
+    </div>
+
+    <div id="status-box">
+        <span id="status-msg"></span>
+        <div id="result-links" class="file-list"></div>
+    </div>
+</div>
+
+<script>
+    function toggleLang() { fetch('/toggle_lang').then(() => location.reload()); }
+
+    // Tab Switching
+    function switchTab(tabName) {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+        const index = tabName === 'genome' ? 0 : (tabName === 'protein' ? 1 : 2);
+        document.querySelectorAll('.tab')[index].classList.add('active');
+        document.getElementById('tab-' + tabName).classList.add('active');
+    }
+
+    // --- Enhanced Drag & Drop Logic ---
+    function setupDragDrop(wrapperId, inputId, nameId) {
+        const wrapper = document.getElementById(wrapperId);
+        const input = document.getElementById(inputId);
+        const nameDisplay = document.getElementById(nameId);
+
+        // Click to upload
+        wrapper.addEventListener('click', () => input.click());
+
+        // File Selected via Click
+        input.addEventListener('change', () => {
+            if (input.files.length) nameDisplay.innerText = "Selected: " + input.files[0].name;
+        });
+
+        // Drag Over
+        wrapper.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            wrapper.classList.add('dragover');
+        });
+
+        // Drag Leave
+        wrapper.addEventListener('dragleave', () => {
+            wrapper.classList.remove('dragover');
+        });
+
+        // Drop
+        wrapper.addEventListener('drop', (e) => {
+            e.preventDefault();
+            wrapper.classList.remove('dragover');
+
+            if (e.dataTransfer.files.length) {
+                input.files = e.dataTransfer.files;
+                nameDisplay.innerText = "Selected: " + input.files[0].name;
+            }
+        });
+    }
+
+    // Initialize Drag Zones
+    setupDragDrop('drop-genome', 'g-genome', 'name-genome');
+    setupDragDrop('drop-query', 'g-query', 'name-query');
+    setupDragDrop('drop-gff', 'g-gff', 'name-gff');
+    setupDragDrop('drop-prot', 'p-prot', 'name-prot');
+    setupDragDrop('drop-hmm', 'p-hmm', 'name-hmm');
+
+    // Submit Task
+    function submitTask(formId) {
+        const form = document.getElementById(formId);
+        const formData = new FormData(form);
+
+        // Basic Validation
+        if(formId === 'form-genome' && !document.getElementById('g-genome').files.length) {
+            alert('Error: Please upload a genome file.'); return;
+        }
+        if(formId === 'form-protein' && !document.getElementById('p-prot').files.length) {
+            alert('Error: Please upload a protein file.'); return;
+        }
+
+        const statusBox = document.getElementById('status-box');
+        statusBox.style.display = 'block';
+        statusBox.className = 'status-running';
+        document.getElementById('status-msg').innerText = "{{ t.status_running }}";
+        document.getElementById('result-links').innerHTML = '';
+
+        // Disable buttons
+        document.querySelectorAll('.run-btn').forEach(b => b.disabled = true);
+
+        fetch('/run', { method: 'POST', body: formData })
+            .then(res => res.json())
+            .then(data => {
+                if(data.task_id) poll(data.task_id);
+                else {
+                    showError("Submission failed: " + (data.msg || "Unknown error"));
+                }
+            })
+            .catch(err => showError("Network error: " + err));
+    }
+
+    function showError(msg) {
+        const statusBox = document.getElementById('status-box');
+        statusBox.className = 'status-error';
+        document.getElementById('status-msg').innerText = msg;
+        document.querySelectorAll('.run-btn').forEach(b => b.disabled = false);
+    }
+
+    function poll(taskId) {
+        const interval = setInterval(() => {
+            fetch('/status/' + taskId).then(res => res.json()).then(data => {
+                if(data.status === 'complete') {
+                    clearInterval(interval);
+                    const statusBox = document.getElementById('status-box');
+                    statusBox.className = 'status-complete';
+                    document.getElementById('status-msg').innerText = "{{ t.status_done }}";
+                    document.querySelectorAll('.run-btn').forEach(b => b.disabled = false);
+
+                    let linksHtml = '';
+                    data.files.forEach(f => {
+                        linksHtml += `<a href="${f.url}" class="file-item" target="_blank">Download: ${f.name}</a>`;
+                    });
+                    document.getElementById('result-links').innerHTML = linksHtml;
+
+                } else if(data.status === 'error') {
+                    clearInterval(interval);
+                    showError("Analysis Error: " + data.msg);
+                }
+            });
+        }, 2000);
+    }
+</script>
+
+</body>
+</html>

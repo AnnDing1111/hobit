@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hobit"
+version = "1.0.0"
+description = "HobIT - Homeobox Identity Tool: A comprehensive toolkit for homeobox gene identification."
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = [
+    "biopython>=1.79",
+    "xlsxwriter>=3.0.0",
+    "flask>=2.0.0"
+]
+
+[project.scripts]
+hobit = "hobit.hobit_main:main"
+hobit-gui = "hobit.web_gui:main"
+
+[tool.setuptools.packages.find]
+include = ["hobit*"]
+
+[tool.setuptools.package-data]
+hobit = ["data/*.hmm", "data/*.fa", "templates/*.html"]

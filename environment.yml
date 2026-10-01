@@ -1,0 +1,23 @@
+name: hobit
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - python>=3.8
+
+  - biopython>=1.79
+  - xlsxwriter>=3.0.0
+  - flask>=2.0.0
+
+  - blast
+  - hmmer
+  - exonerate
+  - mafft
+  - gffcompare
+
+  - pip
+  - pip:
+      # - fair-esm
+      # - torch
+      # removed not finished
